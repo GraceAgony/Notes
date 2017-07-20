@@ -1,55 +1,20 @@
-import React, { Component } from 'react';
-import { DragDropContext } from 'react-dnd';
-import PropTypes from 'prop-types';
-import update from 'react/lib/update';
-import { DropTarget, DragDropContext } from 'react-dnd';
-import HTML5Backend from 'react-dnd-html5-backend';
-import { DragSource } from 'react-dnd';
 
 
-
-function noteSource(){
-    beginDrag(props){
-        const { id, left, top } = props;
-        return { id, left, top };
-    },
-};
-
-
-@DragSource('box', noteSource, (connect, monitor) => ({
-    connectDragSource: connect.dragSource(),
-    isDragging: monitor.isDragging(),
-}))
-
-
-
-export default class Note extends React.Component {
+class Note extends React.Component {
     constructor(props){
         super(props);
     };
 
-    static propTypes = {
-        connectDragSource: PropTypes.func.isRequired,
-        isDragging: PropTypes.bool.isRequired,
-        id: PropTypes.any.isRequired,
-        left: PropTypes.number.isRequired,
-        top: PropTypes.number.isRequired,
-        children: PropTypes.node,
-    };
-
 
     render(){
-        const { left, top, connectDragSource, isDragging, children } = this.props;
+
         const style = {
             backgroundColor: this.props.color,
-            position: 'absolute',
-            border: '1px dashed gray',
-            padding: '0.5rem 1rem',
-            cursor: 'move',
         };
 
-        return connectDragSource(
-            <div className="note" style={{ ...style, left, top }}>
+
+        return (
+            <div className="note" style={style}>
                 <span className="delete-note" onClick={this.props.onDelete}>x</span>
                 <span className="content">{this.props.children}</span>
             </div>
@@ -143,8 +108,6 @@ class NoteEditor extends React.Component {
                 text: this.state.text,
                 color: colors[Math.floor(Math.random() * (colors.length +1 )) ],
                 id: Date.now(),
-                left: 80,
-                top: 80,
             };
 
             this.props.onNoteAdd(newNote);
@@ -171,66 +134,21 @@ class NoteEditor extends React.Component {
 
 
 
-
-
-const noteTarget = {
-    drop(props, monitor, component) {
-        const item = monitor.getItem();
-        const delta = monitor.getDifferenceFromInitialOffset();
-        const left = Math.round(item.left + delta.x);
-        const top = Math.round(item.top + delta.y);
-
-        component.moveNote(item.id, left, top);
-    },
-};
-
-@DragDropContext(HTML5Backend)
-@DropTarget('box', noteTarget, connect => ({
-    connectDropTarget: connect.dropTarget(),
-}))
-
-
-
-export default class NotesGrid extends React.Component{
-
-    static propTypes = {
-        connectDropTarget: PropTypes.func.isRequired,
-    };
-
-    constructor(props) {
-        super(props);
-        this.state = {
-            notes: this.props.notes,
-        };
-    }
-
-    moveNote(id, left, top) {
-        this.setState(update(this.state, {
-           notes: {
-                [id]: {
-                    $merge: { left, top },
-                },
-            },
-        }));
-    }
-
+class NotesGrid extends React.Component{
 
     render() {
     let onNoteDelete = this.props.onNoteDelete;
-    const { hideSourceOnDrag, connectDropTarget } = this.props;
-    const { notes } = this.state;
 
-    return connectDropTarget(
+    return (
         <div className="notes-grid">
             {
-                notes.map(function(note){
+                this.props.notes.map(function(note){
                     const {left, top} = note;
                     return (
                         <Note
                             key={note.id}
                             onDelete={onNoteDelete.bind(null, note)}
                             color = {note.color}
-                            hideSourceOnDrag={hideSourceOnDrag}
                             >
                             {note.text}
                         </Note>
@@ -241,33 +159,8 @@ export default class NotesGrid extends React.Component{
     );
 }
 
-
-/*
-return connectDropTarget(
-    <div style={styles}>
-        {Object.keys(boxes).map((key) => {
-            const { left, top, title } = boxes[key];
-            return (
-                <Box
-                    key={key}
-                    id={key}
-                    left={left}
-                    top={top}
-                    hideSourceOnDrag={hideSourceOnDrag}
-                >
-                    {title}
-                </Box>
-            );
-        })}
-    </div>,
-);
-
-*/
-
 };
 
-
-//export default DragDropContext(HTML5Backend)(NotesApp);
 
 
 ReactDOM.render(

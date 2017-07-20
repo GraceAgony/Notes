@@ -11,9 +11,7 @@
   "license": "MIT",
   "devDependencies": {
     "express": "^4.15.3",
-    "react-dnd": "^2.4.0"
+  
   },
-  "dependencies": {
-    "react-dnd-html5-backend": "^2.4.1"
-  }
+  
 }
