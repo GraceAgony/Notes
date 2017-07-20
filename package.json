@@ -1,0 +1,19 @@
+{
+  "name": "notes",
+  "version": "1.0.0",
+  "description": "notes",
+  "main": "index.html",
+  "stylesheet": "styles.css",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "Lisa",
+  "license": "MIT",
+  "devDependencies": {
+    "express": "^4.15.3",
+    "react-dnd": "^2.4.0"
+  },
+  "dependencies": {
+    "react-dnd-html5-backend": "^2.4.1"
+  }
+}
