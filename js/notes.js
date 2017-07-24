@@ -1,21 +1,82 @@
 
-
 class Note extends React.Component {
     constructor(props){
         super(props);
+
+        this.handleDragEnd = this.handleDragEnd.bind(this);
+        this.componentDidMount = this.componentDidMount.bind(this);
+        this.componentDidUpdate = this.componentDidUpdate.bind(this);
+        this._updateLocalStorage = this._updateLocalStorage.bind(this);
+
+        let id = this.props.id;
+        let styles = JSON.parse(localStorage.getItem('styles'));
+        let noteStyle = styles[id];
+         this.state = {
+             style: noteStyle,
+         };
+    };
+
+    componentDidMount(){
+        let id = this.props.id;
+    };
+
+    componentDidUpdate(){
+        this._updateLocalStorage();
+    };
+
+    _updateLocalStorage(){
+        let id = this.props.id;
+        let styles = JSON.parse(localStorage.getItem('styles'));
+        styles[id] = this.state.style;
+        localStorage.setItem('styles',JSON.stringify(styles));
     };
 
 
+    static handleDragStart(event){
+        event.dataTransfer.effectAllowed='move';
+    };
+
+
+    handleDragEnd(e){
+
+        let wid = getComputedStyle(this.refs.note).width;
+        let heig = getComputedStyle(this.refs.note).height;
+        wid = wid.slice(0,wid.length-2);
+        heig = heig.slice(0,heig.length-2);
+        let pageX = e.pageX;
+        let pageY = e.pageY;
+        let id= this.props.id;
+
+
+        this.setState(function() {
+            return{
+                style: {
+                    position: 'absolute',
+                    left: pageX - wid/2,
+                    top: pageY - heig/2,
+                    backgroundColor: this.props.backgroundColor,
+                    id: id,
+                    key: id,
+        }}
+        }
+        );
+
+
+
+    };
+
     render(){
-
-        const style = {
-            backgroundColor: this.props.color,
-        };
-
-
         return (
-            <div className="note" style={style}>
-                <span className="delete-note" onClick={this.props.onDelete}>x</span>
+            <div className="note"
+                 draggable='true'
+                 onDragStart={this.handleDragStart}
+                 style={this.state.style}
+                 onDragEnd={this.handleDragEnd}
+                 ref ="note"
+                >
+                <span className="delete-note"
+                      onClick={this.props.onDelete}
+                >x</span>
                 <span className="content">{this.props.children}</span>
             </div>
         );
@@ -40,9 +101,14 @@ class NotesApp extends React.Component {
 
     componentDidMount(){
       let localNotes = JSON.parse(localStorage.getItem('notes'));
+      let styles = JSON.parse(localStorage.getItem('styles'));
+      if(!styles){
+          localStorage.setItem('styles', '{}');
+      }
       if(localNotes){
           this.setState({notes: localNotes});
       }
+
     };
 
     componentDidUpdate(){
@@ -55,9 +121,15 @@ class NotesApp extends React.Component {
             return note.id !== noteId;
         });
         this.setState({notes: newNotes});
+        let styleObj = JSON.parse(localStorage.getItem('styles'));
+        delete styleObj[noteId];
+        localStorage.setItem('styles', JSON.stringify(styleObj));
     };
 
     handleNoteAdd(newNote){
+        let styles = JSON.parse(localStorage.getItem('styles'));
+        styles[newNote.id] = newNote;
+        localStorage.setItem('styles',JSON.stringify(styles));
         let newNotes = this.state.notes.slice();
         newNotes.unshift(newNote);
         this.setState({notes: newNotes});
@@ -81,7 +153,7 @@ class NotesApp extends React.Component {
 }
 
     var colors = ['#f6ffab', '#CED9FF', '#ced9ff', '#F6FFAB', '#f2c2fb', '#eaeaea' ,
-                  '#f5cccc', '#d8d3d8', '#ecc7ec,' ,'#cbeff5','#cbf5e0', '#9fffcf',
+                  '#f5cccc', '#d8d3d8', '#ecc7ec' ,'#cbeff5','#cbf5e0', '#9fffcf',
                   '#cdff9f', '#f8fdb0', '#f3dbaf', '#f5d9c9', '#eae5e1'];
 
 class NoteEditor extends React.Component {
@@ -106,11 +178,14 @@ class NoteEditor extends React.Component {
         handleNoteAdd(){
             let newNote = {
                 text: this.state.text,
-                color: colors[Math.floor(Math.random() * (colors.length +1 )) ],
+                backgroundColor: colors[Math.floor(Math.random() * (colors.length +1 )) ],
                 id: Date.now(),
+                top: 0,
+                left: 85,
             };
 
             this.props.onNoteAdd(newNote);
+
             this.setState({
                 text: '',
             });
@@ -143,13 +218,15 @@ class NotesGrid extends React.Component{
         <div className="notes-grid">
             {
                 this.props.notes.map(function(note){
-                    const {left, top} = note;
                     return (
                         <Note
-                            key={note.id}
+                            id={note.id}
+                            key = {note.id}
                             onDelete={onNoteDelete.bind(null, note)}
-                            color = {note.color}
-                            >
+                            backgroundColor ={note.backgroundColor}
+                            left = {note.left}
+                            top = {note.top}
+                           >
                             {note.text}
                         </Note>
                     );
