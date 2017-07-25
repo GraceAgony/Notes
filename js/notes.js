@@ -8,17 +8,99 @@ class Note extends React.Component {
         this.componentDidUpdate = this.componentDidUpdate.bind(this);
         this._updateLocalStorage = this._updateLocalStorage.bind(this);
 
+        this._handleContextMenu = this._handleContextMenu.bind(this);
+        this._handleClick = this._handleClick.bind(this);
+        this._handleScroll = this._handleScroll.bind(this);
+
         let id = this.props.id;
         let styles = JSON.parse(localStorage.getItem('styles'));
         let noteStyle = styles[id];
          this.state = {
              style: noteStyle,
+             visibleMenu: false,
          };
     };
 
-    componentDidMount(){
-        let id = this.props.id;
+    _handleContextMenu(event){
+        event.preventDefault();
+
+        this.setState(function ()
+            {
+                return {
+                        visibleMenu: true,
+                }
+            }
+            );
+
+        const clickX = event.clientX;
+        const clickY = event.clientY;
+        const screenW = window.innerWidth;
+        const screenH = window.innerHeight;
+        const rootW =  this.refs.root.offsetWidth;
+        const rootH =  this.refs.root.offsetHeight;
+
+        const right = (screenW - clickX) > rootW;
+        const left = !right;
+        const top = (screenH - clickY) > rootH;
+        const bottom = !top;
+
+        if (right) {
+            this.refs.root.style.left = `${clickX + 5}px`;
+        }
+
+        if (left) {
+            this.refs.root.style.left = `${clickX - rootW - 5}px`;
+        }
+
+        if (top) {
+            this.refs.root.style.top = `${clickY + 5}px`;
+        }
+
+        if (bottom) {
+            this.refs.root.style.top = `${clickY - rootH - 5}px`;
+        }
     };
+
+    _handleClick(event){
+        const { visibleMenu } = this.state.visibleMenu;
+        const wasOutside = !(event.target.contains === this.refs.root);
+
+        if (wasOutside && visibleMenu)  {
+            this.setState(function ()
+            {
+                return {
+                        visibleMenu: false,
+                }
+            }
+        )
+    };
+    };
+
+    _handleScroll(){
+        const { visibleMenu } = this.state.visibleMenu;
+
+        if (visibleMenu) {
+            this.setState(function () {
+                    return {
+                            visibleMenu: false,
+                        }
+                    }
+            );
+        };
+    };
+
+
+    componentDidMount(){
+        this.refs.note.addEventListener('contextmenu', this._handleContextMenu);
+        this.refs.note.addEventListener('click', this._handleClick);
+        this.refs.note.addEventListener('scroll', this._handleScroll);
+    };
+    componentWillUnmount() {
+        this.refs.note.removeEventListener('contextmenu', this._handleContextMenu);
+        this.refs.note.removeEventListener('click', this._handleClick);
+        this.refs.note.removeEventListener('scroll', this._handleScroll);
+    };
+
 
     componentDidUpdate(){
         this._updateLocalStorage();
@@ -57,15 +139,32 @@ class Note extends React.Component {
                     backgroundColor: this.props.backgroundColor,
                     id: id,
                     key: id,
-        }}
+        },
+            visibleMenu: false,
+            }
         }
         );
-
-
-
     };
 
     render(){
+        const visibleMenu = this.state.visibleMenu;
+
+        console.log(visibleMenu);
+        console.log(this.state.style.id);
+
+        let menu ='';
+        if (visibleMenu){
+            menu = <div ref="root" className="contextMenu">
+                <div className="contextMenu--option">Change color</div>
+                <div className="contextMenu--option">Delete this</div>
+            </div>
+
+        } else {
+            menu =
+                <div ref="root">
+                </div>
+
+        }
         return (
             <div className="note"
                  draggable='true'
@@ -74,6 +173,9 @@ class Note extends React.Component {
                  onDragEnd={this.handleDragEnd}
                  ref ="note"
                 >
+                <div>
+                    {menu}
+                </div>
                 <span className="delete-note"
                       onClick={this.props.onDelete}
                 >x</span>
@@ -233,14 +335,14 @@ class NotesGrid extends React.Component{
                 })
             }
         </div>
+
     );
 }
 
 };
 
 
-
-ReactDOM.render(
+    ReactDOM.render(
     <NotesApp />,
         document.getElementById("mount-point")
 );
